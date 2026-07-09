@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tumbler — Solana wallet generator</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-t6mbl3r2026'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'none'; form-action 'none';">
+<style>
+  :root {
+    --bg: #0b0b14;
+    --surface: #15151f;
+    --surface-2: #1b1b28;
+    --border: #2a2a3a;
+    --border-strong: #3d3d52;
+    --text: #eceafc;
+    --text-secondary: #a3a1bd;
+    --text-muted: #6d6c86;
+    --accent: #8b6bff;
+    --accent-dim: #5f47b3;
+    --accent-text: #ffffff;
+    --accent-2: #34d1c4;
+    --warn-bg: #2a1f16;
+    --warn-border: #6b4a2a;
+    --warn-text: #d9a86c;
+    --mono: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 48px 20px 80px;
+  }
+  .wrap { width: 100%; max-width: 720px; }
+
+  .hero-card {
+    position: relative;
+    border-radius: 20px;
+    padding: 26px 24px 24px;
+    margin-bottom: 24px;
+    overflow: hidden;
+    background:
+      radial-gradient(120% 140% at 100% 0%, rgba(52,209,196,0.25) 0%, rgba(52,209,196,0) 45%),
+      radial-gradient(120% 140% at 0% 100%, rgba(139,107,255,0.35) 0%, rgba(139,107,255,0) 50%),
+      linear-gradient(135deg, #171730 0%, #0f0f1c 100%);
+    border: 1px solid var(--border-strong);
+  }
+  .hero-top-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    color: var(--accent-2);
+    text-transform: uppercase;
+    margin: 0 0 8px;
+  }
+  h1 { font-size: 28px; font-weight: 600; margin: 0 0 8px; letter-spacing: -0.01em; }
+  .lede { color: #cfcde8; font-size: 14.5px; line-height: 1.55; margin: 0; max-width: 56ch; }
+
+  .reset-btn {
+    flex-shrink: 0;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border-strong);
+    color: var(--text-secondary);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 12.5px;
+    font-family: var(--sans);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .reset-btn svg { width: 14px; height: 14px; }
+  .reset-btn:hover { border-color: #e08080; color: #f0a0a0; }
+
+  .warning {
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--warn-text);
+    margin-bottom: 28px;
+  }
+  .warning b { color: #f0c78e; }
+
+  /* --- Step blocks --- */
+  .step-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px;
+    margin-bottom: 20px;
+  }
+  .step-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 18px; }
+  .step-num {
+    flex-shrink: 0;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px;
+  }
+  .step-title { font-size: 17px; font-weight: 600; margin: 0 0 4px; }
+  .step-sub { font-size: 13px; color: var(--text-secondary); margin: 0; }
+
+  .type-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  @media (max-width: 640px) { .type-grid { grid-template-columns: repeat(2, 1fr); } }
+  .type-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 12px;
+    text-align: center;
+    cursor: pointer;
+    color: var(--text);
+    font-family: var(--sans);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .type-card svg { width: 26px; height: 26px; color: var(--accent-2); }
+  .type-card.active { border-color: var(--accent); background: rgba(139,107,255,0.08); }
+  .type-card.active svg { color: var(--accent); }
+  .type-title { font-size: 13.5px; font-weight: 600; }
+  .type-desc { font-size: 11.5px; color: var(--text-muted); line-height: 1.4; }
+
+  .settings-section { display: none; }
+  .settings-section.active { display: block; }
+
+  .field { margin-bottom: 18px; }
+  .field label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  .field-hint { font-size: 12px; color: var(--text-muted); margin: 8px 0 0; line-height: 1.55; }
+  .field-hint.warn { color: var(--warn-text); }
+
+  input[type="text"], input[type="password"], input[type="number"], textarea {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 7px;
+    padding: 10px 12px;
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  input:focus, textarea:focus { outline: none; border-color: var(--accent-dim); }
+  textarea { resize: vertical; min-height: 76px; }
+
+  .wordcount-toggle, .mode-sub-toggle {
+    display: inline-flex;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .wordcount-toggle button, .mode-sub-toggle button {
+    background: var(--surface-2);
+    color: var(--text-secondary);
+    border: none;
+    padding: 8px 16px;
+    font-family: var(--mono);
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .wordcount-toggle button + button, .mode-sub-toggle button + button { border-left: 1px solid var(--border-strong); }
+  .wordcount-toggle button.active, .mode-sub-toggle button.active { background: var(--accent); color: var(--accent-text); font-weight: 600; }
+
+  .password-input-wrap { display: flex; gap: 8px; }
+  .inline-btn {
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    color: var(--text-secondary);
+    border-radius: 7px;
+    padding: 9px 14px;
+    font-size: 12px;
+    font-family: var(--sans);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .inline-btn:hover { border-color: var(--accent-dim); color: var(--text); }
+  .inline-btn:disabled { opacity: 0.5; cursor: default; }
+
+  .count-chip-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .count-chip {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-family: var(--mono);
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .count-chip:hover { border-color: var(--accent-dim); }
+  .count-chip.active { border-color: var(--accent); background: rgba(139,107,255,0.12); color: var(--text); font-weight: 600; }
+  .count-chip:disabled { opacity: 0.4; cursor: default; }
+
+  .case-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text-secondary); cursor: pointer; margin-top: 8px; }
+  .checkbox-row { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--text-secondary); cursor: pointer; margin-bottom: 4px; }
+
+  .generate-btn {
+    background: var(--accent);
+    color: var(--accent-text);
+    border: none;
+    border-radius: 8px;
+    padding: 13px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: var(--sans);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    transition: transform 0.08s ease, background 0.15s ease;
+  }
+  .generate-btn:hover { background: #9c7dff; }
+  .generate-btn:active { transform: scale(0.99); }
+  .generate-btn:disabled { opacity: 0.6; cursor: default; }
+  .generate-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .generate-btn.spinning svg { animation: spin 0.6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .stop-btn {
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    color: var(--text-secondary);
+    border-radius: 7px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-family: var(--sans);
+    cursor: pointer;
+  }
+  .stop-btn:hover { border-color: #a45a5a; color: #d97878; }
+
+  /* --- Results panel --- */
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 22px; min-height: 100px; }
+  .panel-empty { color: var(--text-muted); font-size: 14px; text-align: center; padding: 30px 12px; }
+  .panel-label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 14px; }
+
+  .tumblers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
+  @media (max-width: 440px) { .tumblers { grid-template-columns: repeat(2, 1fr); } }
+  .tumbler {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 7px;
+    padding: 8px 10px;
+    opacity: 0; transform: translateY(6px) scale(0.96);
+  }
+  .tumbler.reveal { animation: click-in 0.32s cubic-bezier(0.2, 0.8, 0.3, 1.1) forwards; }
+  @keyframes click-in { 0% { opacity: 0; transform: translateY(6px) scale(0.9); } 60% { opacity: 1; transform: translateY(-1px) scale(1.02); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+  .tumbler-index { font-family: var(--mono); font-size: 11px; color: var(--text-muted); width: 16px; flex-shrink: 0; text-align: right; }
+  .tumbler-word { font-family: var(--mono); font-size: 13px; color: var(--text); }
+
+  .copy-seed-line, .copy-btn {
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    color: var(--text-secondary);
+    border-radius: 7px;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-family: var(--sans);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .copy-seed-line { width: 100%; justify-content: center; padding: 10px 14px; font-size: 13px; margin-bottom: 20px; }
+  .copy-seed-line svg { width: 14px; height: 14px; }
+  .copy-seed-line:hover, .copy-btn:hover { border-color: var(--accent-dim); color: var(--text); }
+  .copy-seed-line.copied, .copy-btn.copied { border-color: var(--accent); color: var(--accent); }
+
+  .export-actions { display: flex; gap: 10px; flex-wrap: wrap; margin: 4px 0 20px; }
+
+  .secret-warning {
+    background: var(--warn-bg); border: 1px solid var(--warn-border); border-radius: 10px;
+    padding: 12px 14px; font-size: 12.5px; line-height: 1.55; color: var(--warn-text); margin-bottom: 16px;
+  }
+
+  .progress-wrap { display: none; margin-bottom: 14px; }
+  .progress-wrap.visible { display: block; }
+  progress.bar { width: 100%; height: 8px; border-radius: 4px; overflow: hidden; appearance: none; margin-bottom: 8px; }
+  progress.bar::-webkit-progress-bar { background: var(--surface-2); border-radius: 4px; }
+  progress.bar::-webkit-progress-value { background: var(--accent); border-radius: 4px; }
+  progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 4px; }
+  .progress-stats { display: flex; gap: 16px; flex-wrap: wrap; font-family: var(--mono); font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; }
+
+  .wallets-table-wrap { max-height: 360px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; }
+  table.wallets-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12px; }
+  table.wallets-table th {
+    position: sticky; top: 0; background: var(--surface-2); text-align: left; padding: 8px 10px;
+    color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.06em;
+  }
+  table.wallets-table td { padding: 7px 10px; border-top: 1px solid var(--border); color: var(--text); word-break: break-all; }
+  table.wallets-table td.idx-col { color: var(--text-muted); width: 44px; }
+  table.wallets-table button.copy-btn { padding: 3px 8px; font-size: 11px; }
+  .download-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .error-box {
+    background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn-text);
+    border-radius: 8px; padding: 12px 14px; font-size: 13px; margin-bottom: 16px;
+  }
+
+  .footer-note { margin-top: 24px; font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+  .footer-note code { color: var(--text-secondary); }
+
+  textarea#decrypt-input { min-height: 90px; }
+  .decrypt-details { margin-top: 28px; border-top: 1px solid var(--border); padding-top: 18px; }
+  .decrypt-details summary { cursor: pointer; font-family: var(--mono); font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; }
+  .decrypt-details summary:hover { color: var(--text); }
+  .decrypt-output {
+    margin-top: 10px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 7px; padding: 12px;
+    font-family: var(--mono); font-size: 12px; white-space: pre-wrap; word-break: break-all; color: var(--text);
+    max-height: 300px; overflow-y: auto;
+  }
+
+  /* --- Print (paper wallet), text-only for now --- */
+  #print-section { display: none; }
+  @media print {
+    body * { visibility: hidden; }
+    #print-section, #print-section * { visibility: visible; }
+    #print-section { display: block; position: absolute; top: 0; left: 0; width: 100%; background: #fff; color: #111; padding: 24px; }
+    #print-section h2 { margin: 0 0 6px; }
+    #print-section h3 { margin: 20px 0 8px; }
+    .print-warning { border: 1px solid #cc8800; background: #fff6e0; padding: 10px 12px; border-radius: 6px; font-size: 12px; }
+    .print-words { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px 16px; font-family: monospace; font-size: 13px; margin-bottom: 10px; }
+    .print-word span { color: #888; margin-right: 6px; }
+    .print-address-block { margin-bottom: 16px; page-break-inside: avoid; }
+    .print-address-label { font-weight: 700; margin: 0 0 4px; }
+    .print-address-text { font-family: monospace; font-size: 12px; word-break: break-all; margin: 0 0 6px; }
+    .print-footer { margin-top: 24px; font-size: 10px; color: #888; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero-card">
+    <div class="hero-top-row">
+      <div>
+        <p class="eyebrow">Solana &middot; client-side key generator</p>
+        <h1>Tumbler</h1>
+      </div>
+      <button type="button" class="reset-btn" id="reset-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 4v5h5"></path></svg>
+        Reset
+      </button>
+    </div>
+    <p class="lede">Generate, import, or vanity-search Solana wallets entirely in your browser. Nothing is sent anywhere — this page makes zero network requests, ever.</p>
+  </div>
+
+  <div class="warning">
+    <b>Before you fund anything:</b> this runs in a browser tab, which is not a secure place to generate or import a real wallet. Use it to learn, test, or prototype. For a wallet that will hold real funds, use official wallet software (Phantom, Solflare, a hardware wallet) on a device you trust — never a browser tab or an AI chat.
+  </div>
+
+  <div class="step-block">
+    <div class="step-header">
+      <span class="step-num">1</span>
+      <div>
+        <p class="step-title">Choose Generation Type</p>
+        <p class="step-sub">Select how you want to get your wallet(s).</p>
+      </div>
+    </div>
+    <div class="type-grid">
+      <button type="button" class="type-card active" id="type-new" data-type="new">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 4 1.5 3L20 8.5 17 10l-1.5 3L14 10l-3 -1.5L14 7z"></path><path d="M5 15l1 2 2 1-2 1-1 2-1-2-2-1 2-1z"></path><path d="M4 4l.75 1.5L6.5 6.25 5 7l-.75 1.5L3.5 7l-1.5-.75L3.5 5.5z"></path></svg>
+        <span class="type-title">Generate New</span>
+        <span class="type-desc">Create a completely new wallet</span>
+      </button>
+      <button type="button" class="type-card" id="type-vanity" data-type="vanity">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 4 1.5 3L20 8.5 17 10l-1.5 3L14 10l-3 -1.5L14 7z"></path><path d="m4 20 10-10"></path><path d="M8 20l-3-3"></path></svg>
+        <span class="type-title">Vanity Address</span>
+        <span class="type-desc">Choose your own starting letters</span>
+      </button>
+      <button type="button" class="type-card" id="type-privkey" data-type="privkey">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"></circle><path d="M10.5 12.5 20 3"></path><path d="M17 6l3 3"></path><path d="M14 9l3 3"></path></svg>
+        <span class="type-title">From Private Key</span>
+        <span class="type-desc">Load a wallet from a private key</span>
+      </button>
+      <button type="button" class="type-card" id="type-seed" data-type="seed">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M9 13h6"></path><path d="M9 17h6"></path></svg>
+        <span class="type-title">From Seed Phrase</span>
+        <span class="type-desc">Load a wallet from a seed phrase</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="step-block">
+    <div class="step-header">
+      <span class="step-num">2</span>
+      <div>
+        <p class="step-title">Generation Settings</p>
+        <p class="step-sub">Customize your wallet preferences.</p>
+      </div>
+    </div>
+
+    <div class="settings-section active" id="settings-new">
+      <div class="field">
+        <label>Word count</label>
+        <div class="wordcount-toggle" role="group" aria-label="Word count">
+          <button type="button" id="btn-12" class="active">12 words</button>
+          <button type="button" id="btn-24">24 words</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="entropy-password">Optional password <span style="text-transform:none; font-family:var(--sans); color:var(--text-muted);">(adds entropy, and unlocks encrypted backup export)</span></label>
+        <div class="password-input-wrap">
+          <input type="password" id="entropy-password" placeholder="Leave blank to skip" autocomplete="off">
+          <button type="button" class="inline-btn" id="toggle-password-visibility">Show</button>
+        </div>
+        <p class="field-hint">
+          This is <b>not</b> a BIP39 passphrase (the "25th word") — losing it does not lock you out. Your seed phrase alone always recovers this wallet. It only (1) mixes into the randomness used to generate it, as a hedge if you don't fully trust the browser's RNG, and (2) if you download an encrypted backup below, is the password needed to open that file.
+        </p>
+      </div>
+    </div>
+
+    <div class="settings-section" id="settings-vanity">
+      <div class="field">
+        <label>Starting with</label>
+        <div class="password-input-wrap">
+          <input type="text" id="prefix-input" placeholder="e.g. TUMB" maxlength="8" autocomplete="off" spellcheck="false">
+        </div>
+        <label class="case-toggle"><input type="checkbox" id="prefix-case-insensitive" checked> Ignore case (faster)</label>
+        <p class="field-hint" id="prefix-hint">Uses base58 characters only — never <code>0</code>, <code>O</code>, <code>I</code>, or <code>l</code> (they don't appear in Solana addresses).</p>
+      </div>
+    </div>
+
+    <div class="settings-section" id="settings-privkey">
+      <div class="field">
+        <label>Private key (base58)</label>
+        <textarea id="privkey-input" placeholder="Paste a 64-byte secret key (what Phantom exports) or a 32-byte seed, base58-encoded"></textarea>
+        <p class="field-hint">Decoded and used entirely in this browser tab — never sent anywhere.</p>
+      </div>
+    </div>
+
+    <div class="settings-section" id="settings-seed">
+      <div class="field">
+        <label>Seed phrase</label>
+        <textarea id="seed-input" placeholder="Paste your 12 or 24-word seed phrase"></textarea>
+        <p class="field-hint">Checked against the full BIP39 checksum before use, so a typo gets caught here rather than silently giving you the wrong wallet.</p>
+      </div>
+    </div>
+
+    <div class="field" id="wallet-count-field">
+      <label>Number of Wallets</label>
+      <div class="count-chip-row" id="count-chip-row">
+        <button type="button" class="count-chip active" data-count="1">1</button>
+        <button type="button" class="count-chip" data-count="5">5</button>
+        <button type="button" class="count-chip" data-count="10">10</button>
+        <button type="button" class="count-chip" data-count="20">20</button>
+        <button type="button" class="count-chip" data-count="50">50</button>
+        <button type="button" class="count-chip" data-count="100">100</button>
+        <button type="button" class="count-chip" data-count="custom">Custom</button>
+      </div>
+      <input type="number" id="wallet-count-custom" style="display:none; margin-top:8px;" min="1" max="100000" placeholder="Up to 100,000">
+      <p class="field-hint" id="wallet-count-hint">Each additional wallet is a different BIP44 account on the same seed phrase — the same thing Phantom does when you tap "Add / Connect Wallet."</p>
+    </div>
+
+    <label class="checkbox-row" id="include-keys-row"><input type="checkbox" id="include-keys-checkbox"> Include private keys in the results table / download</label>
+
+    <div style="display:flex; gap:10px; align-items:center; margin-top:14px;">
+      <button type="button" class="generate-btn" id="main-generate-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+        <span id="main-generate-label">Generate</span>
+      </button>
+      <button type="button" class="stop-btn" id="main-stop-btn" style="display:none;">Stop</button>
+    </div>
+  </div>
+
+  <div class="progress-wrap" id="progress-wrap">
+    <progress class="bar" id="progress-bar" value="0" max="100"></progress>
+    <div class="progress-stats">
+      <span id="progress-count">0 / 0</span>
+      <span id="progress-rate">0/s</span>
+      <span id="progress-eta">&nbsp;</span>
+    </div>
+  </div>
+
+  <div id="error-box"></div>
+
+  <div class="panel" id="panel">
+    <div class="panel-empty" id="panel-empty">No wallet generated yet.</div>
+  </div>
+
+  <p class="footer-note">
+    Solana only, for now — derivation path <code>m/44'/501'/i'/0'</code> (BIP44 + SLIP-0010 ed25519), the same scheme Phantom, Solflare, Sollet, and Ledger use. Fully offline: no fonts, scripts, or fetches from anywhere else. Entropy comes from your browser's <code>crypto.getRandomValues</code>.
+  </p>
+
+  <details class="decrypt-details">
+    <summary>Decrypt a backup file</summary>
+    <div class="decrypt-body">
+      <p class="field-hint">Paste the contents of a <code>tumbler-encrypted-backup.json</code> file you downloaded earlier, plus the password you used, to view it again. Works offline, independent of whatever's generated above.</p>
+      <textarea id="decrypt-input" placeholder="Paste the encrypted JSON here"></textarea>
+      <div class="password-input-wrap" style="margin-top:8px;">
+        <input type="password" id="decrypt-password" placeholder="Password">
+        <button type="button" class="inline-btn" id="decrypt-btn">Decrypt</button>
+      </div>
+      <pre id="decrypt-output" class="decrypt-output" style="display:none;"></pre>
+    </div>
+  </details>
+
+</div>
+
+<div id="print-section"></div>
+
+<script nonce="t6mbl3r2026">
+const WORDLIST = [
+"abandon","ability","able","about","above","absent","absorb","abstract","absurd","abuse","access","accident",
+"account","accuse","achieve","acid","acoustic","acquire","across","act","action","actor","actress","actual",
+"adapt","add","addict","address","adjust","admit","adult","advance","advice","aerobic","affair","afford",
+"afraid","again","age","agent","agree","ahead","aim","air","airport","aisle","alarm","album",
+"alcohol","alert","alien","all","alley","allow","almost","alone","alpha","already","also","alter",
+"always","amateur","amazing","among","amount","amused","analyst","anchor","ancient","anger","angle","angry",
+"animal","ankle","announce","annual","another","answer","antenna","antique","anxiety","any","apart","apology",
+"appear","apple","approve","april","arch","arctic","area","arena","argue","arm","armed","armor",
+"army","around","arrange","arrest","arrive","arrow","art","artefact","artist","artwork","ask","aspect",
+"assault","asset","assist","assume","asthma","athlete","atom","attack","attend","attitude","attract","auction",
+"audit","august","aunt","author","auto","autumn","average","avocado","avoid","awake","aware","away",
+"awesome","awful","awkward","axis","baby","bachelor","bacon","badge","bag","balance","balcony","ball",
+"bamboo","banana","banner","bar","barely","bargain","barrel","base","basic","basket","battle","beach",
+"bean","beauty","because","become","beef","before","begin","behave","behind","believe","below","belt",
+"bench","benefit","best","betray","better","between","beyond","bicycle","bid","bike","bind","biology",
+"bird","birth","bitter","black","blade","blame","blanket","blast","bleak","bless","blind","blood",
+"blossom","blouse","blue","blur","blush","board","boat","body","boil","bomb","bone","bonus",
+"book","boost","border","boring","borrow","boss","bottom","bounce","box","boy","bracket","brain",
+"brand","brass","brave","bread","breeze","brick","bridge","brief","bright","bring","brisk","broccoli",
+"broken","bronze","broom","brother","brown","brush","bubble","buddy","budget","buffalo","build","bulb",
+"bulk","bullet","bundle","bunker","burden","burger","burst","bus","business","busy","butter","buyer",
+"buzz","cabbage","cabin","cable","cactus","cage","cake","call","calm","camera","camp","can",
+"canal","cancel","candy","cannon","canoe","canvas","canyon","capable","capital","captain","car","carbon",
+"card","cargo","carpet","carry","cart","case","cash","casino","castle","casual","cat","catalog",
+"catch","category","cattle","caught","cause","caution","cave","ceiling","celery","cement","census","century",
+"cereal","certain","chair","chalk","champion","change","chaos","chapter","charge","chase","chat","cheap",
+"check","cheese","chef","cherry","chest","chicken","chief","child","chimney","choice","choose","chronic",
+"chuckle","chunk","churn","cigar","cinnamon","circle","citizen","city","civil","claim","clap","clarify",
+"claw","clay","clean","clerk","clever","click","client","cliff","climb","clinic","clip","clock",
+"clog","close","cloth","cloud","clown","club","clump","cluster","clutch","coach","coast","coconut",
+"code","coffee","coil","coin","collect","color","column","combine","come","comfort","comic","common",
+"company","concert","conduct","confirm","congress","connect","consider","control","convince","cook","cool","copper",
+"copy","coral","core","corn","correct","cost","cotton","couch","country","couple","course","cousin",
+"cover","coyote","crack","cradle","craft","cram","crane","crash","crater","crawl","crazy","cream",
+"credit","creek","crew","cricket","crime","crisp","critic","crop","cross","crouch","crowd","crucial",
+"cruel","cruise","crumble","crunch","crush","cry","crystal","cube","culture","cup","cupboard","curious",
+"current","curtain","curve","cushion","custom","cute","cycle","dad","damage","damp","dance","danger",
+"daring","dash","daughter","dawn","day","deal","debate","debris","decade","december","decide","decline",
+"decorate","decrease","deer","defense","define","defy","degree","delay","deliver","demand","demise","denial",
+"dentist","deny","depart","depend","deposit","depth","deputy","derive","describe","desert","design","desk",
+"despair","destroy","detail","detect","develop","device","devote","diagram","dial","diamond","diary","dice",
+"diesel","diet","differ","digital","dignity","dilemma","dinner","dinosaur","direct","dirt","disagree","discover",
+"disease","dish","dismiss","disorder","display","distance","divert","divide","divorce","dizzy","doctor","document",
+"dog","doll","dolphin","domain","donate","donkey","donor","door","dose","double","dove","draft",
+"dragon","drama","drastic","draw","dream","dress","drift","drill","drink","drip","drive","drop",
+"drum","dry","duck","dumb","dune","during","dust","dutch","duty","dwarf","dynamic","eager",
+"eagle","early","earn","earth","easily","east","easy","echo","ecology","economy","edge","edit",
+"educate","effort","egg","eight","either","elbow","elder","electric","elegant","element","elephant","elevator",
+"elite","else","embark","embody","embrace","emerge","emotion","employ","empower","empty","enable","enact",
+"end","endless","endorse","enemy","energy","enforce","engage","engine","enhance","enjoy","enlist","enough",
+"enrich","enroll","ensure","enter","entire","entry","envelope","episode","equal","equip","era","erase",
+"erode","erosion","error","erupt","escape","essay","essence","estate","eternal","ethics","evidence","evil",
+"evoke","evolve","exact","example","excess","exchange","excite","exclude","excuse","execute","exercise","exhaust",
+"exhibit","exile","exist","exit","exotic","expand","expect","expire","explain","expose","express","extend",
+"extra","eye","eyebrow","fabric","face","faculty","fade","faint","faith","fall","false","fame",
+"family","famous","fan","fancy","fantasy","farm","fashion","fat","fatal","father","fatigue","fault",
+"favorite","feature","february","federal","fee","feed","feel","female","fence","festival","fetch","fever",
+"few","fiber","fiction","field","figure","file","film","filter","final","find","fine","finger",
+"finish","fire","firm","first","fiscal","fish","fit","fitness","fix","flag","flame","flash",
+"flat","flavor","flee","flight","flip","float","flock","floor","flower","fluid","flush","fly",
+"foam","focus","fog","foil","fold","follow","food","foot","force","forest","forget","fork",
+"fortune","forum","forward","fossil","foster","found","fox","fragile","frame","frequent","fresh","friend",
+"fringe","frog","front","frost","frown","frozen","fruit","fuel","fun","funny","furnace","fury",
+"future","gadget","gain","galaxy","gallery","game","gap","garage","garbage","garden","garlic","garment",
+"gas","gasp","gate","gather","gauge","gaze","general","genius","genre","gentle","genuine","gesture",
+"ghost","giant","gift","giggle","ginger","giraffe","girl","give","glad","glance","glare","glass",
+"glide","glimpse","globe","gloom","glory","glove","glow","glue","goat","goddess","gold","good",
+"goose","gorilla","gospel","gossip","govern","gown","grab","grace","grain","grant","grape","grass",
+"gravity","great","green","grid","grief","grit","grocery","group","grow","grunt","guard","guess",
+"guide","guilt","guitar","gun","gym","habit","hair","half","hammer","hamster","hand","happy",
+"harbor","hard","harsh","harvest","hat","have","hawk","hazard","head","health","heart","heavy",
+"hedgehog","height","hello","helmet","help","hen","hero","hidden","high","hill","hint","hip",
+"hire","history","hobby","hockey","hold","hole","holiday","hollow","home","honey","hood","hope",
+"horn","horror","horse","hospital","host","hotel","hour","hover","hub","huge","human","humble",
+"humor","hundred","hungry","hunt","hurdle","hurry","hurt","husband","hybrid","ice","icon","idea",
+"identify","idle","ignore","ill","illegal","illness","image","imitate","immense","immune","impact","impose",
+"improve","impulse","inch","include","income","increase","index","indicate","indoor","industry","infant","inflict",
+"inform","inhale","inherit","initial","inject","injury","inmate","inner","innocent","input","inquiry","insane",
+"insect","inside","inspire","install","intact","interest","into","invest","invite","involve","iron","island",
+"isolate","issue","item","ivory","jacket","jaguar","jar","jazz","jealous","jeans","jelly","jewel",
+"job","join","joke","journey","joy","judge","juice","jump","jungle","junior","junk","just",
+"kangaroo","keen","keep","ketchup","key","kick","kid","kidney","kind","kingdom","kiss","kit",
+"kitchen","kite","kitten","kiwi","knee","knife","knock","know","lab","label","labor","ladder",
+"lady","lake","lamp","language","laptop","large","later","latin","laugh","laundry","lava","law",
+"lawn","lawsuit","layer","lazy","leader","leaf","learn","leave","lecture","left","leg","legal",
+"legend","leisure","lemon","lend","length","lens","leopard","lesson","letter","level","liar","liberty",
+"library","license","life","lift","light","like","limb","limit","link","lion","liquid","list",
+"little","live","lizard","load","loan","lobster","local","lock","logic","lonely","long","loop",
+"lottery","loud","lounge","love","loyal","lucky","luggage","lumber","lunar","lunch","luxury","lyrics",
+"machine","mad","magic","magnet","maid","mail","main","major","make","mammal","man","manage",
+"mandate","mango","mansion","manual","maple","marble","march","margin","marine","market","marriage","mask",
+"mass","master","match","material","math","matrix","matter","maximum","maze","meadow","mean","measure",
+"meat","mechanic","medal","media","melody","melt","member","memory","mention","menu","mercy","merge",
+"merit","merry","mesh","message","metal","method","middle","midnight","milk","million","mimic","mind",
+"minimum","minor","minute","miracle","mirror","misery","miss","mistake","mix","mixed","mixture","mobile",
+"model","modify","mom","moment","monitor","monkey","monster","month","moon","moral","more","morning",
+"mosquito","mother","motion","motor","mountain","mouse","move","movie","much","muffin","mule","multiply",
+"muscle","museum","mushroom","music","must","mutual","myself","mystery","myth","naive","name","napkin",
+"narrow","nasty","nation","nature","near","neck","need","negative","neglect","neither","nephew","nerve",
+"nest","net","network","neutral","never","news","next","nice","night","noble","noise","nominee",
+"noodle","normal","north","nose","notable","note","nothing","notice","novel","now","nuclear","number",
+"nurse","nut","oak","obey","object","oblige","obscure","observe","obtain","obvious","occur","ocean",
+"october","odor","off","offer","office","often","oil","okay","old","olive","olympic","omit",
+"once","one","onion","online","only","open","opera","opinion","oppose","option","orange","orbit",
+"orchard","order","ordinary","organ","orient","original","orphan","ostrich","other","outdoor","outer","output",
+"outside","oval","oven","over","own","owner","oxygen","oyster","ozone","pact","paddle","page",
+"pair","palace","palm","panda","panel","panic","panther","paper","parade","parent","park","parrot",
+"party","pass","patch","path","patient","patrol","pattern","pause","pave","payment","peace","peanut",
+"pear","peasant","pelican","pen","penalty","pencil","people","pepper","perfect","permit","person","pet",
+"phone","photo","phrase","physical","piano","picnic","picture","piece","pig","pigeon","pill","pilot",
+"pink","pioneer","pipe","pistol","pitch","pizza","place","planet","plastic","plate","play","please",
+"pledge","pluck","plug","plunge","poem","poet","point","polar","pole","police","pond","pony",
+"pool","popular","portion","position","possible","post","potato","pottery","poverty","powder","power","practice",
+"praise","predict","prefer","prepare","present","pretty","prevent","price","pride","primary","print","priority",
+"prison","private","prize","problem","process","produce","profit","program","project","promote","proof","property",
+"prosper","protect","proud","provide","public","pudding","pull","pulp","pulse","pumpkin","punch","pupil",
+"puppy","purchase","purity","purpose","purse","push","put","puzzle","pyramid","quality","quantum","quarter",
+"question","quick","quit","quiz","quote","rabbit","raccoon","race","rack","radar","radio","rail",
+"rain","raise","rally","ramp","ranch","random","range","rapid","rare","rate","rather","raven",
+"raw","razor","ready","real","reason","rebel","rebuild","recall","receive","recipe","record","recycle",
+"reduce","reflect","reform","refuse","region","regret","regular","reject","relax","release","relief","rely",
+"remain","remember","remind","remove","render","renew","rent","reopen","repair","repeat","replace","report",
+"require","rescue","resemble","resist","resource","response","result","retire","retreat","return","reunion","reveal",
+"review","reward","rhythm","rib","ribbon","rice","rich","ride","ridge","rifle","right","rigid",
+"ring","riot","ripple","risk","ritual","rival","river","road","roast","robot","robust","rocket",
+"romance","roof","rookie","room","rose","rotate","rough","round","route","royal","rubber","rude",
+"rug","rule","run","runway","rural","sad","saddle","sadness","safe","sail","salad","salmon",
+"salon","salt","salute","same","sample","sand","satisfy","satoshi","sauce","sausage","save","say",
+"scale","scan","scare","scatter","scene","scheme","school","science","scissors","scorpion","scout","scrap",
+"screen","script","scrub","sea","search","season","seat","second","secret","section","security","seed",
+"seek","segment","select","sell","seminar","senior","sense","sentence","series","service","session","settle",
+"setup","seven","shadow","shaft","shallow","share","shed","shell","sheriff","shield","shift","shine",
+"ship","shiver","shock","shoe","shoot","shop","short","shoulder","shove","shrimp","shrug","shuffle",
+"shy","sibling","sick","side","siege","sight","sign","silent","silk","silly","silver","similar",
+"simple","since","sing","siren","sister","situate","six","size","skate","sketch","ski","skill",
+"skin","skirt","skull","slab","slam","sleep","slender","slice","slide","slight","slim","slogan",
+"slot","slow","slush","small","smart","smile","smoke","smooth","snack","snake","snap","sniff",
+"snow","soap","soccer","social","sock","soda","soft","solar","soldier","solid","solution","solve",
+"someone","song","soon","sorry","sort","soul","sound","soup","source","south","space","spare",
+"spatial","spawn","speak","special","speed","spell","spend","sphere","spice","spider","spike","spin",
+"spirit","split","spoil","sponsor","spoon","sport","spot","spray","spread","spring","spy","square",
+"squeeze","squirrel","stable","stadium","staff","stage","stairs","stamp","stand","start","state","stay",
+"steak","steel","stem","step","stereo","stick","still","sting","stock","stomach","stone","stool",
+"story","stove","strategy","street","strike","strong","struggle","student","stuff","stumble","style","subject",
+"submit","subway","success","such","sudden","suffer","sugar","suggest","suit","summer","sun","sunny",
+"sunset","super","supply","supreme","sure","surface","surge","surprise","surround","survey","suspect","sustain",
+"swallow","swamp","swap","swarm","swear","sweet","swift","swim","swing","switch","sword","symbol",
+"symptom","syrup","system","table","tackle","tag","tail","talent","talk","tank","tape","target",
+"task","taste","tattoo","taxi","teach","team","tell","ten","tenant","tennis","tent","term",
+"test","text","thank","that","theme","then","theory","there","they","thing","this","thought",
+"three","thrive","throw","thumb","thunder","ticket","tide","tiger","tilt","timber","time","tiny",
+"tip","tired","tissue","title","toast","tobacco","today","toddler","toe","together","toilet","token",
+"tomato","tomorrow","tone","tongue","tonight","tool","tooth","top","topic","topple","torch","tornado",
+"tortoise","toss","total","tourist","toward","tower","town","toy","track","trade","traffic","tragic",
+"train","transfer","trap","trash","travel","tray","treat","tree","trend","trial","tribe","trick",
+"trigger","trim","trip","trophy","trouble","truck","true","truly","trumpet","trust","truth","try",
+"tube","tuition","tumble","tuna","tunnel","turkey","turn","turtle","twelve","twenty","twice","twin",
+"twist","two","type","typical","ugly","umbrella","unable","unaware","uncle","uncover","under","undo",
+"unfair","unfold","unhappy","uniform","unique","unit","universe","unknown","unlock","until","unusual","unveil",
+"update","upgrade","uphold","upon","upper","upset","urban","urge","usage","use","used","useful",
+"useless","usual","utility","vacant","vacuum","vague","valid","valley","valve","van","vanish","vapor",
+"various","vast","vault","vehicle","velvet","vendor","venture","venue","verb","verify","version","very",
+"vessel","veteran","viable","vibrant","vicious","victory","video","view","village","vintage","violin","virtual",
+"virus","visa","visit","visual","vital","vivid","vocal","voice","void","volcano","volume","vote",
+"voyage","wage","wagon","wait","walk","wall","walnut","want","warfare","warm","warrior","wash",
+"wasp","waste","water","wave","way","wealth","weapon","wear","weasel","weather","web","wedding",
+"weekend","weird","welcome","west","wet","whale","what","wheat","wheel","when","where","whip",
+"whisper","wide","width","wife","wild","will","win","window","wine","wing","wink","winner",
+"winter","wire","wisdom","wise","wish","witness","wolf","woman","wonder","wood","wool","word",
+"work","world","worry","worth","wrap","wreck","wrestle","wrist","write","wrong","yard","year",
+"yellow","you","young","youth","zebra","zero","zone","zoo"
+];
+
+const PKCS8_ED25519_HEADER = new Uint8Array([0x30,0x2e,0x02,0x01,0x00,0x30,0x05,0x06,0x03,0x2b,0x65,0x70,0x04,0x22,0x04,0x20]);
+const B58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+
+function concatBytes(...arrs) {
+  const len = arrs.reduce((a, b) => a + b.length, 0);
+  const out = new Uint8Array(len);
+  let off = 0;
+  for (const a of arrs) { out.set(a, off); off += a.length; }
+  return out;
+}
+
+function bytesToBinaryString(bytes) {
+  let s = "";
+  for (const b of bytes) s += b.toString(2).padStart(8, "0");
+  return s;
+}
+
+async function generateMnemonic(wordCount, password) {
+  const entropyBytes = wordCount === 24 ? 32 : 16;
+  const randomBytes = new Uint8Array(entropyBytes);
+  crypto.getRandomValues(randomBytes);
+
+  let entropy = randomBytes;
+  if (password) {
+    // Mix in user-supplied entropy without ever weakening the CSPRNG output:
+    // SHA-256(randomBytes || password) is uniformly random as long as
+    // randomBytes is — true no matter how weak or guessable the password is,
+    // since randomBytes alone already carries full entropy. This only adds
+    // confidence, it never subtracts it, even with an empty/weak password.
+    const enc = new TextEncoder();
+    const mixInput = concatBytes(randomBytes, enc.encode(password));
+    const hashBuf = await crypto.subtle.digest("SHA-256", mixInput);
+    entropy = new Uint8Array(hashBuf).slice(0, entropyBytes);
+  }
+
+  const hashBuf = await crypto.subtle.digest("SHA-256", entropy);
+  const hashBits = bytesToBinaryString(new Uint8Array(hashBuf));
+  const checksumLen = (entropyBytes * 8) / 32;
+  const checksumBits = hashBits.slice(0, checksumLen);
+
+  const entropyBits = bytesToBinaryString(entropy);
+  const allBits = entropyBits + checksumBits;
+
+  const words = [];
+  for (let i = 0; i < allBits.length; i += 11) {
+    const idx = parseInt(allBits.slice(i, i + 11), 2);
+    words.push(WORDLIST[idx]);
+  }
+  return words.join(" ");
+}
+
+async function mnemonicToSeed(mnemonic, passphrase = "") {
+  const enc = new TextEncoder();
+  const password = enc.encode(mnemonic.normalize("NFKD"));
+  const salt = enc.encode(("mnemonic" + passphrase).normalize("NFKD"));
+  const keyMaterial = await crypto.subtle.importKey("raw", password, { name: "PBKDF2" }, false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: 2048, hash: "SHA-512" }, keyMaterial, 512);
+  return new Uint8Array(bits);
+}
+
+async function hmacSha512(key, data) {
+  const cryptoKey = await crypto.subtle.importKey("raw", key, { name: "HMAC", hash: "SHA-512" }, false, ["sign"]);
+  const sig = await crypto.subtle.sign("HMAC", cryptoKey, data);
+  return new Uint8Array(sig);
+}
+
+function bytesToBase64(bytes) {
+  let bin = "";
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin);
+}
+function base64ToBytes(b64) {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+// Password-based AES-256-GCM, used for the "encrypted backup" export. This is
+// the SAME password field used for entropy mixing above — see the note in the
+// UI: unlike a BIP39 passphrase, forgetting this password does NOT lock you
+// out of the wallet (the seed phrase alone is always enough to recover it).
+// It only locks you out of re-opening this specific encrypted export file.
+const AES_PBKDF2_ITERATIONS = 250000;
+
+async function deriveAesKey(password, salt) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey("raw", enc.encode(password), { name: "PBKDF2" }, false, ["deriveKey"]);
+  return crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt, iterations: AES_PBKDF2_ITERATIONS, hash: "SHA-256" },
+    keyMaterial,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"]
+  );
+}
+
+async function encryptWithPassword(password, plaintext) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveAesKey(password, salt);
+  const ciphertextBuf = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(plaintext));
+  return {
+    format: "tumbler-encrypted-backup",
+    v: 1,
+    kdf: "PBKDF2-SHA256",
+    iterations: AES_PBKDF2_ITERATIONS,
+    cipher: "AES-256-GCM",
+    salt: bytesToBase64(salt),
+    iv: bytesToBase64(iv),
+    ciphertext: bytesToBase64(new Uint8Array(ciphertextBuf)),
+  };
+}
+
+async function decryptWithPassword(password, envelope) {
+  const salt = base64ToBytes(envelope.salt);
+  const iv = base64ToBytes(envelope.iv);
+  const key = await deriveAesKey(password, salt);
+  const ciphertext = base64ToBytes(envelope.ciphertext);
+  const plainBuf = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ciphertext);
+  return new TextDecoder().decode(plainBuf);
+}
+
+function ser32(i) {
+  const buf = new Uint8Array(4);
+  buf[0] = (i >>> 24) & 0xff;
+  buf[1] = (i >>> 16) & 0xff;
+  buf[2] = (i >>> 8) & 0xff;
+  buf[3] = i & 0xff;
+  return buf;
+}
+
+async function slip10Ed25519Derive(seed, path) {
+  let I = await hmacSha512(new TextEncoder().encode("ed25519 seed"), seed);
+  let IL = I.slice(0, 32);
+  let IR = I.slice(32);
+  const segments = path.split("/").filter(s => s.length && s !== "m").map(s => {
+    const hardened = s.endsWith("'");
+    const num = parseInt(hardened ? s.slice(0, -1) : s, 10);
+    return hardened ? (num + 0x80000000) : num;
+  });
+  for (const idx of segments) {
+    const data = concatBytes(new Uint8Array([0]), IL, ser32(idx >>> 0));
+    I = await hmacSha512(IR, data);
+    IL = I.slice(0, 32);
+    IR = I.slice(32);
+  }
+  return IL;
+}
+
+async function derivePublicKey(seed32) {
+  const pkcs8 = concatBytes(PKCS8_ED25519_HEADER, seed32);
+  const privKey = await crypto.subtle.importKey("pkcs8", pkcs8, { name: "Ed25519" }, true, ["sign"]);
+  const jwk = await crypto.subtle.exportKey("jwk", privKey);
+  let b64 = jwk.x.replace(/-/g, "+").replace(/_/g, "/");
+  while (b64.length % 4) b64 += "=";
+  const bin = atob(b64);
+  const raw = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) raw[i] = bin.charCodeAt(i);
+  return raw;
+}
+
+function base58Encode(bytes) {
+  let digits = [0];
+  for (let i = 0; i < bytes.length; i++) {
+    let carry = bytes[i];
+    for (let j = 0; j < digits.length; j++) {
+      carry += digits[j] << 8;
+      digits[j] = carry % 58;
+      carry = (carry / 58) | 0;
+    }
+    while (carry > 0) {
+      digits.push(carry % 58);
+      carry = (carry / 58) | 0;
+    }
+  }
+  let result = "";
+  for (let k = 0; bytes[k] === 0 && k < bytes.length - 1; k++) result += "1";
+  for (let q = digits.length - 1; q >= 0; q--) result += B58_ALPHABET[digits[q]];
+  return result;
+}
+
+
+
+// base58 decode — needed for "From Private Key" import.
+function base58Decode(str) {
+  let bytes = [0];
+  for (let i = 0; i < str.length; i++) {
+    const value = B58_ALPHABET.indexOf(str[i]);
+    if (value === -1) throw new Error("Invalid base58 character: \"" + str[i] + "\"");
+    let carry = value;
+    for (let j = 0; j < bytes.length; j++) {
+      carry += bytes[j] * 58;
+      bytes[j] = carry & 0xff;
+      carry >>= 8;
+    }
+    while (carry > 0) {
+      bytes.push(carry & 0xff);
+      carry >>= 8;
+    }
+  }
+  for (let i = 0; i < str.length && str[i] === "1"; i++) bytes.push(0);
+  return new Uint8Array(bytes.reverse());
+}
+
+// Full BIP39 validation (word membership + checksum), used for "From Seed Phrase" import.
+async function validateMnemonic(mnemonic) {
+  const words = mnemonic.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (words.length !== 12 && words.length !== 24) {
+    return { valid: false, error: "Must be exactly 12 or 24 words (found " + words.length + ")." };
+  }
+  const indices = [];
+  for (const w of words) {
+    const idx = WORDLIST.indexOf(w);
+    if (idx === -1) return { valid: false, error: `"${w}" is not a valid BIP39 word.` };
+    indices.push(idx);
+  }
+  const bits = indices.map(i => i.toString(2).padStart(11, "0")).join("");
+  const entropyBitsLen = words.length === 24 ? 256 : 128;
+  const checksumBitsLen = words.length === 24 ? 8 : 4;
+  const entropyBitsStr = bits.slice(0, entropyBitsLen);
+  const checksumBitsStr = bits.slice(entropyBitsLen, entropyBitsLen + checksumBitsLen);
+
+  const entropyBytes = new Uint8Array(entropyBitsLen / 8);
+  for (let i = 0; i < entropyBytes.length; i++) entropyBytes[i] = parseInt(entropyBitsStr.slice(i * 8, i * 8 + 8), 2);
+
+  const hashBuf = await crypto.subtle.digest("SHA-256", entropyBytes);
+  const hashBits = bytesToBinaryString(new Uint8Array(hashBuf));
+  const expectedChecksum = hashBits.slice(0, checksumBitsLen);
+
+  if (expectedChecksum !== checksumBitsStr) {
+    return { valid: false, error: "Checksum doesn't match — check for typos or word order." };
+  }
+  return { valid: true, mnemonic: words.join(" ") };
+}
+
+// Import a Solana wallet directly from a base58 private key: either the
+// standard 64-byte secret key (32-byte seed + 32-byte pubkey, what Phantom
+// exports) or a bare 32-byte seed.
+async function importFromPrivateKey(input) {
+  const trimmed = input.trim();
+  let bytes;
+  try {
+    bytes = base58Decode(trimmed);
+  } catch (e) {
+    throw new Error("Not a valid base58 string.");
+  }
+  let seed32, pubkey;
+  if (bytes.length === 64) {
+    seed32 = bytes.slice(0, 32);
+    pubkey = bytes.slice(32);
+  } else if (bytes.length === 32) {
+    seed32 = bytes;
+    pubkey = await derivePublicKey(seed32);
+  } else {
+    throw new Error(`Expected a 32 or 64-byte base58 key, got ${bytes.length} bytes.`);
+  }
+  const address = base58Encode(pubkey);
+  return { address, seed32, pubkey };
+}
+
+// ---------------------------------------------------------------------------
+// Small shared helpers
+// ---------------------------------------------------------------------------
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+function base64UrlToBytes(b64url) {
+  let b64 = b64url.replace(/-/g, "+").replace(/_/g, "/");
+  while (b64.length % 4) b64 += "=";
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+function formatElapsed(ms) {
+  const s = Math.floor(ms / 1000);
+  if (s < 60) return s + "s";
+  const m = Math.floor(s / 60);
+  return `${m}m ${s % 60}s`;
+}
+function copyToClipboard(text, btn, resetLabel) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = "Copied";
+    btn.classList.add("copied");
+    setTimeout(() => { btn.textContent = resetLabel; btn.classList.remove("copied"); }, 1400);
+  });
+}
+function copySeedLine(text, btn) {
+  const label = btn.querySelector("#copy-phrase-label");
+  navigator.clipboard.writeText(text).then(() => {
+    label.textContent = "Copied";
+    btn.classList.add("copied");
+    setTimeout(() => { label.textContent = "Copy seed phrase"; btn.classList.remove("copied"); }, 1400);
+  });
+}
+function downloadTextFile(filename, text, mime) {
+  const blob = new Blob([text], { type: mime || "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
+let wordCount = 12;
+let currentType = "new"; // new | vanity | privkey | seed
+let currentSeed = null;
+let currentPassword = "";
+let deriving = false;
+let grinding = false;
+let selectedCount = 1;
+
+// ---------------------------------------------------------------------------
+// DOM refs
+// ---------------------------------------------------------------------------
+const panel = document.getElementById("panel");
+const errorBox = document.getElementById("error-box");
+const mainGenerateBtn = document.getElementById("main-generate-btn");
+const mainGenerateLabel = document.getElementById("main-generate-label");
+const mainStopBtn = document.getElementById("main-stop-btn");
+const progressWrap = document.getElementById("progress-wrap");
+const progressBar = document.getElementById("progress-bar");
+const progressCount = document.getElementById("progress-count");
+const progressRate = document.getElementById("progress-rate");
+const progressEta = document.getElementById("progress-eta");
+const btn12 = document.getElementById("btn-12");
+const btn24 = document.getElementById("btn-24");
+const entropyPasswordInput = document.getElementById("entropy-password");
+const togglePasswordBtn = document.getElementById("toggle-password-visibility");
+const prefixInput = document.getElementById("prefix-input");
+const prefixCaseInsensitive = document.getElementById("prefix-case-insensitive");
+const prefixHint = document.getElementById("prefix-hint");
+const countChips = document.querySelectorAll(".count-chip");
+const customCountInput = document.getElementById("wallet-count-custom");
+const includeKeysCheckbox = document.getElementById("include-keys-checkbox");
+
+function clearError() { errorBox.innerHTML = ""; }
+function showError(msg) { errorBox.innerHTML = `<div class="error-box">${escapeHtml(msg)}</div>`; }
+
+// ---------------------------------------------------------------------------
+// Type switching (Step 1)
+// ---------------------------------------------------------------------------
+function countApplies() { return currentType === "new" || currentType === "seed"; }
+
+function setType(type) {
+  currentType = type;
+  document.querySelectorAll(".type-card").forEach(c => c.classList.toggle("active", c.dataset.type === type));
+  document.getElementById("settings-new").classList.toggle("active", type === "new");
+  document.getElementById("settings-vanity").classList.toggle("active", type === "vanity");
+  document.getElementById("settings-privkey").classList.toggle("active", type === "privkey");
+  document.getElementById("settings-seed").classList.toggle("active", type === "seed");
+
+  const applies = countApplies();
+  document.getElementById("wallet-count-field").style.opacity = applies ? "1" : "0.55";
+  countChips.forEach(chip => { chip.disabled = (chip.dataset.count !== "1") && !applies; });
+  if (!applies) selectCount(1);
+
+  document.getElementById("wallet-count-hint").textContent = applies
+    ? `Each additional wallet is a different BIP44 account on the same seed phrase — the same thing Phantom does when you tap "Add / Connect Wallet."`
+    : (type === "privkey"
+      ? "A single private key is exactly one wallet — there's no seed to derive siblings from."
+      : "Vanity search produces one independently-generated address at a time.");
+
+  mainGenerateLabel.textContent = (type === "vanity") ? "Find address" : "Generate";
+  clearError();
+}
+document.querySelectorAll(".type-card").forEach(card => {
+  card.addEventListener("click", () => setType(card.dataset.type));
+});
+
+// ---------------------------------------------------------------------------
+// Count chips (Step 2)
+// ---------------------------------------------------------------------------
+function selectCount(n) {
+  selectedCount = n;
+  countChips.forEach(c => c.classList.toggle("active", c.dataset.count === String(n)));
+  customCountInput.style.display = "none";
+}
+countChips.forEach(chip => {
+  chip.addEventListener("click", () => {
+    if (chip.disabled) return;
+    countChips.forEach(c => c.classList.remove("active"));
+    chip.classList.add("active");
+    if (chip.dataset.count === "custom") {
+      customCountInput.style.display = "block";
+      customCountInput.focus();
+    } else {
+      customCountInput.style.display = "none";
+      selectedCount = parseInt(chip.dataset.count, 10);
+    }
+  });
+});
+customCountInput.addEventListener("input", () => {
+  let v = parseInt(customCountInput.value, 10);
+  if (!Number.isInteger(v) || v < 1) v = 1;
+  if (v > 100000) v = 100000;
+  selectedCount = v;
+});
+function getSelectedCount() { return countApplies() ? selectedCount : 1; }
+
+// ---------------------------------------------------------------------------
+// Word count / password visibility (Generate New settings)
+// ---------------------------------------------------------------------------
+btn12.addEventListener("click", () => { wordCount = 12; btn12.classList.add("active"); btn24.classList.remove("active"); });
+btn24.addEventListener("click", () => { wordCount = 24; btn24.classList.add("active"); btn12.classList.remove("active"); });
+togglePasswordBtn.addEventListener("click", () => {
+  const showing = entropyPasswordInput.type === "text";
+  entropyPasswordInput.type = showing ? "password" : "text";
+  togglePasswordBtn.textContent = showing ? "Show" : "Hide";
+});
+
+// ---------------------------------------------------------------------------
+// Vanity prefix validation/hint (Vanity settings)
+// ---------------------------------------------------------------------------
+const INVALID_ALWAYS = new Set(["0"]);
+const INVALID_CASE_SENSITIVE_ONLY = { "O": true, "I": true, "l": true };
+
+function validatePrefix(raw, caseInsensitive) {
+  for (const ch of raw) {
+    if (INVALID_ALWAYS.has(ch)) return `"${ch}" never appears in a Solana address.`;
+    if (!caseInsensitive && INVALID_CASE_SENSITIVE_ONLY[ch]) {
+      return `"${ch}" isn't valid in that case — try the other case, or turn on "Ignore case".`;
+    }
+  }
+  return null;
+}
+function estimateAttempts(raw, caseInsensitive) {
+  let expected = 1;
+  for (const ch of raw) {
+    const isDigit = ch >= "0" && ch <= "9";
+    const matchingOptions = isDigit ? 1 : (caseInsensitive ? 2 : 1);
+    expected *= 58 / matchingOptions;
+  }
+  return Math.round(expected);
+}
+function updatePrefixHint() {
+  const raw = prefixInput.value;
+  const caseInsensitive = prefixCaseInsensitive.checked;
+  if (!raw) {
+    prefixHint.classList.remove("warn");
+    prefixHint.innerHTML = `Uses base58 characters only — never <code>0</code>, <code>O</code>, <code>I</code>, or <code>l</code> (they don't appear in Solana addresses).`;
+    return;
+  }
+  const error = validatePrefix(raw, caseInsensitive);
+  if (error) {
+    prefixHint.classList.add("warn");
+    prefixHint.textContent = error;
+    return;
+  }
+  const expected = estimateAttempts(raw, caseInsensitive);
+  const long = raw.length >= 5;
+  prefixHint.classList.toggle("warn", long);
+  prefixHint.textContent = `~${expected.toLocaleString()} attempts expected on average.` +
+    (long ? " That's long enough this could take minutes to hours in a browser tab — shorter prefixes are much faster." : "");
+}
+prefixInput.addEventListener("input", updatePrefixHint);
+prefixCaseInsensitive.addEventListener("change", updatePrefixHint);
+updatePrefixHint();
+
+// ---------------------------------------------------------------------------
+// Main Generate button — dispatches to the flow for the selected type
+// ---------------------------------------------------------------------------
+mainGenerateBtn.addEventListener("click", async () => {
+  clearError();
+  deriving = false;
+  grinding = false;
+  mainGenerateBtn.disabled = true;
+
+  try {
+    if (currentType === "new") await runGenerateNew();
+    else if (currentType === "seed") await runImportSeed();
+    else if (currentType === "privkey") await runImportPrivateKey();
+    else if (currentType === "vanity") await runVanity();
+  } catch (err) {
+    showError(err.message || String(err));
+    progressWrap.classList.remove("visible");
+    mainStopBtn.style.display = "none";
+    mainGenerateLabel.textContent = (currentType === "vanity") ? "Find address" : "Generate";
+  } finally {
+    mainGenerateBtn.disabled = false;
+  }
+});
+mainStopBtn.addEventListener("click", () => { deriving = false; grinding = false; });
+
+async function runGenerateNew() {
+  const password = entropyPasswordInput.value;
+  const mnemonic = await generateMnemonic(wordCount, password);
+  const seed = await mnemonicToSeed(mnemonic);
+  currentSeed = seed;
+  currentPassword = password;
+  await runBulkDerive(getSelectedCount(), 0, includeKeysCheckbox.checked, mnemonic);
+}
+
+async function runImportSeed() {
+  const raw = document.getElementById("seed-input").value;
+  if (!raw.trim()) { showError("Paste a seed phrase first."); return; }
+  const validation = await validateMnemonic(raw);
+  if (!validation.valid) { showError(validation.error); return; }
+  const seed = await mnemonicToSeed(validation.mnemonic);
+  currentSeed = seed;
+  currentPassword = ""; // encrypted export isn't offered for imports in this version
+  await runBulkDerive(getSelectedCount(), 0, includeKeysCheckbox.checked, validation.mnemonic);
+}
+
+async function runImportPrivateKey() {
+  const raw = document.getElementById("privkey-input").value;
+  if (!raw.trim()) { showError("Paste a private key first."); return; }
+  const { address, seed32, pubkey } = await importFromPrivateKey(raw);
+  currentSeed = null;
+  currentPassword = "";
+  const row = { index: 0, path: "imported", address };
+  if (includeKeysCheckbox.checked) row.secretKey = base58Encode(concatBytes(seed32, pubkey));
+  renderResults({ mnemonic: null, rows: [row], warning: null });
+}
+
+async function runVanity() {
+  const raw = prefixInput.value.trim();
+  const caseInsensitive = prefixCaseInsensitive.checked;
+  if (!raw) { showError("Enter a prefix first."); return; }
+  const prefixError = validatePrefix(raw, caseInsensitive);
+  if (prefixError) { showError(prefixError); return; }
+
+  grinding = true;
+  mainStopBtn.style.display = "inline-flex";
+  mainGenerateLabel.textContent = "Searching\u2026";
+  progressWrap.classList.add("visible");
+  progressBar.removeAttribute("value"); // indeterminate — total attempts needed isn't fixed
+  panel.innerHTML = `<div class="panel-empty">Searching for an address starting with "${escapeHtml(raw)}"\u2026</div>`;
+
+  const needle = caseInsensitive ? raw.toLowerCase() : raw;
+  let attempts = 0;
+  const startTime = performance.now();
+  let lastYield = performance.now();
+
+  while (grinding) {
+    const keyPair = await crypto.subtle.generateKey({ name: "Ed25519" }, true, ["sign", "verify"]);
+    const rawPub = new Uint8Array(await crypto.subtle.exportKey("raw", keyPair.publicKey));
+    const address = base58Encode(rawPub);
+    const haystack = caseInsensitive ? address.toLowerCase() : address;
+    attempts++;
+
+    if (haystack.startsWith(needle)) {
+      const jwk = await crypto.subtle.exportKey("jwk", keyPair.privateKey);
+      const seed32 = base64UrlToBytes(jwk.d);
+      const secretKeyBase58 = base58Encode(concatBytes(seed32, rawPub));
+      grinding = false;
+      mainStopBtn.style.display = "none";
+      mainGenerateLabel.textContent = "Find address";
+      progressWrap.classList.remove("visible");
+      renderResults({
+        mnemonic: null,
+        rows: [{ index: 0, path: "vanity", address, secretKey: secretKeyBase58 }],
+        warning: `<b>This is a private key, not a seed phrase.</b> Vanity mode grinds a raw keypair directly, so there's no 12/24-word backup. Store the secret key below like you would a seed phrase — anyone with it has full control of the wallet. Most wallets support this via "Import Private Key."`,
+      });
+      return;
+    }
+
+    if (performance.now() - lastYield > 30) {
+      const elapsedMs = performance.now() - startTime;
+      const rate = elapsedMs > 0 ? attempts / (elapsedMs / 1000) : 0;
+      progressCount.textContent = `${attempts.toLocaleString()} attempts`;
+      progressRate.textContent = Math.round(rate).toLocaleString() + "/s";
+      progressEta.textContent = formatElapsed(elapsedMs) + " elapsed";
+      await new Promise(r => setTimeout(r, 0));
+      lastYield = performance.now();
+    }
+  }
+
+  mainStopBtn.style.display = "none";
+  mainGenerateLabel.textContent = "Find address";
+  progressWrap.classList.remove("visible");
+  panel.innerHTML = `<div class="panel-empty" id="panel-empty">No wallet generated yet.</div>`;
+}
+
+async function runBulkDerive(count, startIndex, includeKeys, mnemonicForDisplay) {
+  deriving = true;
+  mainStopBtn.style.display = "inline-flex";
+  mainGenerateLabel.textContent = "Deriving\u2026";
+  progressWrap.classList.add("visible");
+  progressBar.max = count;
+  progressBar.value = 0;
+  panel.innerHTML = "";
+
+  const rows = [];
+  const startTime = performance.now();
+  let lastYield = performance.now();
+  let wasStopped = false;
+
+  for (let i = 0; i < count; i++) {
+    if (!deriving) { wasStopped = true; break; }
+    const idx = startIndex + i;
+    const path = `m/44'/501'/${idx}'/0'`;
+    const derivedKey = await slip10Ed25519Derive(currentSeed, path);
+    const pubkey = await derivePublicKey(derivedKey);
+    const address = base58Encode(pubkey);
+    const row = { index: idx, path, address };
+    if (includeKeys) row.secretKey = base58Encode(concatBytes(derivedKey, pubkey));
+    rows.push(row);
+
+    if (performance.now() - lastYield > 30) {
+      const elapsedMs = performance.now() - startTime;
+      const rate = elapsedMs > 0 ? rows.length / (elapsedMs / 1000) : 0;
+      progressBar.value = rows.length;
+      progressCount.textContent = `${rows.length.toLocaleString()} / ${count.toLocaleString()}`;
+      progressRate.textContent = Math.round(rate).toLocaleString() + "/s";
+      const remaining = count - rows.length;
+      progressEta.textContent = rate > 0 ? `~${formatElapsed((remaining / rate) * 1000)} left` : "";
+      await new Promise(r => setTimeout(r, 0));
+      lastYield = performance.now();
+    }
+  }
+
+  deriving = false;
+  mainStopBtn.style.display = "none";
+  mainGenerateLabel.textContent = "Generate";
+  progressWrap.classList.remove("visible");
+
+  renderResults({ mnemonic: mnemonicForDisplay, rows, warning: null, wasStopped });
+}
+
+// ---------------------------------------------------------------------------
+// Unified results renderer — every flow (new/seed/privkey/vanity) funnels here
+// ---------------------------------------------------------------------------
+const INLINE_RENDER_LIMIT = 200;
+
+function renderResults({ mnemonic, rows, warning, wasStopped }) {
+  let html = "";
+
+  if (warning) html += `<div class="secret-warning">${warning}</div>`;
+
+  if (mnemonic) {
+    const words = mnemonic.split(" ");
+    const tumblersHtml = words.map((w, i) =>
+      `<div class="tumbler" style="animation-delay:${i * 45}ms"><span class="tumbler-index">${i + 1}</span><span class="tumbler-word">${escapeHtml(w)}</span></div>`
+    ).join("");
+    html += `
+      <p class="panel-label">Seed phrase</p>
+      <div class="tumblers" id="tumblers">${tumblersHtml}</div>
+      <button type="button" class="copy-seed-line" id="copy-phrase">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        <span id="copy-phrase-label">Copy seed phrase</span>
+      </button>
+      <div class="export-actions">
+        <button type="button" class="inline-btn" id="paper-wallet-btn">Print / save paper backup</button>
+        <button type="button" class="inline-btn" id="encrypted-export-btn" style="${currentPassword ? "" : "display:none;"}">Download encrypted backup (.json)</button>
+      </div>
+    `;
+  }
+
+  html += `<p class="panel-label">${rows.length === 1 ? "Wallet" : rows.length.toLocaleString() + " wallets"}</p>`;
+  if (wasStopped) html += `<p class="field-hint">Stopped early \u2014 ${rows.length.toLocaleString()} derived so far.</p>`;
+
+  const includeKeys = rows.some(r => r.secretKey !== undefined);
+
+  if (rows.length <= INLINE_RENDER_LIMIT) {
+    html += `
+      <div class="wallets-table-wrap">
+        <table class="wallets-table">
+          <thead><tr><th>#</th><th>Address</th>${includeKeys ? "<th>Secret key</th>" : ""}<th></th></tr></thead>
+          <tbody>
+            ${rows.map(r => `
+              <tr>
+                <td class="idx-col">${r.index}</td>
+                <td>${escapeHtml(r.address)}</td>
+                ${includeKeys ? `<td>${r.secretKey ? escapeHtml(r.secretKey) : "\u2014"}</td>` : ""}
+                <td><button type="button" class="copy-btn" data-copy="${escapeHtml(r.address)}">Copy</button></td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+    `;
+  } else {
+    html += `<p class="field-hint">Too many to list on screen usefully \u2014 download instead.</p>`;
+  }
+
+  const csvHeader = includeKeys ? "index,path,address,secret_key_base58\n" : "index,path,address\n";
+  const csvRows = rows.map(r => includeKeys ? `${r.index},${r.path},${r.address},${r.secretKey || ""}` : `${r.index},${r.path},${r.address}`).join("\n");
+  const csvText = (includeKeys ? "# WARNING: this file contains private keys. Treat it like a seed phrase.\n" : "") + csvHeader + csvRows + "\n";
+  const jsonText = JSON.stringify(rows, null, 2);
+
+  html += `
+    <div class="download-row">
+      <button type="button" class="inline-btn" id="download-csv">Download CSV</button>
+      <button type="button" class="inline-btn" id="download-json">Download JSON</button>
+    </div>
+  `;
+
+  panel.innerHTML = html;
+
+  requestAnimationFrame(() => {
+    document.querySelectorAll(".tumbler").forEach(el => el.classList.add("reveal"));
+  });
+
+  panel.querySelectorAll("[data-copy]").forEach(btn => {
+    btn.addEventListener("click", () => copyToClipboard(btn.dataset.copy, btn, "Copy"));
+  });
+  document.getElementById("download-csv").addEventListener("click", () => downloadTextFile("wallets.csv", csvText, "text/csv"));
+  document.getElementById("download-json").addEventListener("click", () => downloadTextFile("wallets.json", jsonText, "application/json"));
+
+  if (mnemonic) {
+    const copyPhraseBtn = document.getElementById("copy-phrase");
+    copyPhraseBtn.addEventListener("click", () => copySeedLine(mnemonic, copyPhraseBtn));
+    document.getElementById("paper-wallet-btn").addEventListener("click", () => openPaperWallet(mnemonic, rows));
+    const encBtn = document.getElementById("encrypted-export-btn");
+    if (encBtn) encBtn.addEventListener("click", () => downloadEncryptedBackup(mnemonic, rows));
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Paper wallet (text-only — no QR in this version) and encrypted export
+// ---------------------------------------------------------------------------
+function openPaperWallet(mnemonic, rows) {
+  const words = mnemonic.split(" ");
+  const wordsHtml = words.map((w, i) => `<div class="print-word"><span>${i + 1}</span>${escapeHtml(w)}</div>`).join("");
+  const shown = rows.slice(0, 20);
+  const printSection = document.getElementById("print-section");
+  printSection.innerHTML = `
+    <h2>Tumbler paper backup</h2>
+    <p class="print-warning">Keep this physically secure \u2014 anyone who sees this seed phrase can access every wallet derived from it.</p>
+    <h3>Seed phrase</h3>
+    <div class="print-words">${wordsHtml}</div>
+    <h3>Address${shown.length > 1 ? "es" : ""}</h3>
+    ${shown.map(r => `
+      <div class="print-address-block">
+        <p class="print-address-label">Account ${r.index}</p>
+        <p class="print-address-text">${escapeHtml(r.address)}</p>
+      </div>
+    `).join("")}
+    ${rows.length > shown.length ? `<p class="print-address-label">...and ${rows.length - shown.length} more \u2014 see the CSV/JSON download.</p>` : ""}
+    <p class="print-footer">Generated with Tumbler \u2014 client-side, no data ever left this browser tab.</p>
+  `;
+  requestAnimationFrame(() => window.print());
+}
+
+async function downloadEncryptedBackup(mnemonic, rows) {
+  if (!currentPassword) return;
+  const payload = { mnemonic, wallets: rows, createdAt: new Date().toISOString() };
+  const envelope = await encryptWithPassword(currentPassword, JSON.stringify(payload, null, 2));
+  downloadTextFile("tumbler-encrypted-backup.json", JSON.stringify(envelope, null, 2), "application/json");
+}
+
+document.getElementById("decrypt-btn").addEventListener("click", async () => {
+  const out = document.getElementById("decrypt-output");
+  out.style.display = "block";
+  try {
+    const envelope = JSON.parse(document.getElementById("decrypt-input").value);
+    const password = document.getElementById("decrypt-password").value;
+    const plaintext = await decryptWithPassword(password, envelope);
+    out.textContent = plaintext;
+  } catch (err) {
+    out.textContent = "Couldn't decrypt: " + (err.message || String(err)) + " \u2014 check the JSON was pasted in full, and the password is correct.";
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Reset
+// ---------------------------------------------------------------------------
+document.getElementById("reset-btn").addEventListener("click", () => {
+  currentSeed = null;
+  currentPassword = "";
+  deriving = false;
+  grinding = false;
+
+  setType("new");
+  entropyPasswordInput.value = "";
+  entropyPasswordInput.type = "password";
+  togglePasswordBtn.textContent = "Show";
+  prefixInput.value = "";
+  updatePrefixHint();
+  document.getElementById("privkey-input").value = "";
+  document.getElementById("seed-input").value = "";
+  includeKeysCheckbox.checked = false;
+  selectCount(1);
+  clearError();
+
+  progressWrap.classList.remove("visible");
+  mainStopBtn.style.display = "none";
+  mainGenerateBtn.disabled = false;
+  mainGenerateLabel.textContent = "Generate";
+
+  panel.innerHTML = `<div class="panel-empty" id="panel-empty">No wallet generated yet.</div>`;
+  document.getElementById("print-section").innerHTML = "";
+});
+</script>
+</body>
+</html>
