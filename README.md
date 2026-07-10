@@ -25,7 +25,7 @@ Read the in-app warning before generating anything. The code is intentionally ke
 
 No install, no server required:
 
-- Open `solana-wallet-generator.html` directly in a browser, **or**
+- Open `solana-wallet-generator-offline.html` directly in a browser, **or**
 - Serve it via GitHub Pages / any static host and install it to your phone's home screen as an app (Chrome → ⋮ menu → "Install app")
 
 Works fully offline once loaded — this page makes zero network requests.
