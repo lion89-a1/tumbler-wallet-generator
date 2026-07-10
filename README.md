@@ -39,3 +39,5 @@ Works fully offline once loaded — this page makes zero network requests.
 ## License
 
 MIT — do whatever you want with it, no warranty.
+
+https://lion89-a1.github.io/tumbler-wallet-generator/solana-wallet-generator-offline.html
